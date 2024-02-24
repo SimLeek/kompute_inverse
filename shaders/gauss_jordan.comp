@@ -30,10 +30,8 @@ void main() {
       uint index = D[l].startIdx + x * D[l].size + y;
       I[index] -= I[int(D[l].startIdx + i * D[l].size + y)] *
                   A[int(D[l].startIdx + x * D[l].size + i)];
-      if (y != i) {
-        A[index] -= A[int(D[l].startIdx + i * D[l].size + y)] *
-                    A[int(D[l].startIdx + x * D[l].size + i)];
-      }
+      A[index] -= A[int(D[l].startIdx + i * D[l].size + y)] *
+                  A[int(D[l].startIdx + x * D[l].size + i)];
     }
   }
 }
