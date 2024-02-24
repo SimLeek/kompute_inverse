@@ -1,0 +1,39 @@
+#version 450
+
+layout(std430, binding = 0) buffer ABuff { float A[]; };
+
+layout(std430, binding = 1) buffer IBuff { float I[]; };
+
+struct MatrixDef {
+  uint size;     // N for an NxN matrix
+  uint startIdx; // 0, NxN, NxN+MxM, and so on. NOT 0, N, M...
+};
+
+layout(std430, binding = 2) buffer DBuff {
+  uint num_matrices;
+  MatrixDef D[];
+};
+
+layout(std430, binding = 3) buffer iPosBuff { uint i; };
+
+layout(local_size_x_id = 0) in;
+
+void main() {
+  uint idx = gl_GlobalInvocationID.x;
+
+  for (uint l = 0; l < num_matrices; l++) {
+    uint x = (idx - D[l].startIdx) / D[l].size;
+    uint y = (idx - D[l].startIdx) % D[l].size;
+
+    // gauss jordan step
+    if (idx >= D[l].startIdx && x < D[l].size && i < D[l].size && x != i) {
+      uint index = D[l].startIdx + x * D[l].size + y;
+      I[index] -= I[int(D[l].startIdx + i * D[l].size + y)] *
+                  A[int(D[l].startIdx + x * D[l].size + i)];
+      if (y != i) {
+        A[index] -= A[int(D[l].startIdx + i * D[l].size + y)] *
+                    A[int(D[l].startIdx + x * D[l].size + i)];
+      }
+    }
+  }
+}

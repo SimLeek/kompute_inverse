@@ -1,0 +1,51 @@
+#version 450
+
+// if you want to use this with, for example, multiple convolution kernels,
+// you'd first need to combine each kernel
+//  into one array while creating a MatrixDef buf
+layout(std430, binding = 0) buffer ABuff { float A[]; };
+
+layout(std430, binding = 1) buffer IBuff { float I[]; };
+
+struct MatrixDef {
+  uint size;     // N for an NxN matrix
+  uint startIdx; // 0, NxN, NxN+MxM, and so on. NOT 0, N, M...
+};
+
+layout(std430, binding = 2) buffer DBuff {
+  uint num_matrices;
+  MatrixDef D[];
+};
+
+layout(std430, binding = 3) buffer iPosBuff {
+  // using an SSBO for this might seem wasteful, but it allows a shader to
+  // iterate it so we can go through extremely
+  //  large matrices entirely on the GPU
+  uint i;
+};
+
+layout(local_size_x_id = 0) in;
+
+void main() {
+  uint idx = gl_GlobalInvocationID.x;
+
+  // Should take the same amount of time as if/else, and this is a small amount
+  // of code for a kernel,
+  //  so branching should be fine
+  for (uint l = 0; l < num_matrices; l++) {
+    uint x = (idx - D[l].startIdx) / D[l].size;
+    uint y = (idx - D[l].startIdx) % D[l].size;
+    float row_div = A[int(D[l].startIdx + i * D[l].size + i)];
+    // Use barrier to ensure all processes get row_div before it's potentially
+    // modified
+    //  outside of workgroups, the different instances will not have written
+    //  back to the buffer.
+    barrier();
+
+    if (idx >= D[l].startIdx && x < D[l].size && i < D[l].size && x == i) {
+      uint index = D[l].startIdx + x * D[l].size + y;
+      I[index] /= row_div;
+      A[index] /= row_div;
+    }
+  }
+}
