@@ -1,6 +1,6 @@
 # Gauss Jordan Inverse using Kompute
 
-Requires numpy and kompute.
+Requires [numpy](https://github.com/numpy/numpy), [kompute](https://github.com/KomputeProject/kompute), and [glslc](https://github.com/google/shaderc).
 
 run with `python inverse.py` once those are installed.
 
